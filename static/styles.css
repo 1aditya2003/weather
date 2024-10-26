@@ -1,0 +1,185 @@
+body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #74ebd5 0%, #ACB6E5 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    padding: 20px;
+    position: relative; /* Ensure the body is positioned relative for absolute children */
+}
+
+.container {
+    position: relative; /* Keep container positioning for its children */
+    text-align: center;
+    background-color: rgba(255, 255, 255, 0.9); /* Slightly transparent to see animation behind */
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    z-index: 2; /* Keep it above the animation */
+}
+
+#weather-animation {
+    position: absolute; /* Position it absolutely */
+    top: 10%; /* Adjust this to position the animation */
+    left: 50%; /* Center it horizontally */
+    transform: translateX(-50%); /* Center the animation */
+    width: 200px; /* Set a smaller width for the animation */
+    height: 200px; /* Set a smaller height for the animation */
+    z-index: 1; /* Place it behind the container */
+    opacity: 0.3; /* Make it semi-transparent */
+    pointer-events: none; /* Disable interactions with the animation */
+}   
+
+.container:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+}
+#visualization-card {
+    border: 1px solid #ccc;
+    padding: 20px;
+    margin-top: 10px;
+    background-color: #f9f9f9;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.title {
+    color: #4a56e2;
+    font-size: 32px;
+    margin-bottom: 20px;
+}
+
+.controls {
+    margin-bottom: 20px;
+}
+
+select {
+    padding: 5px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+}
+
+.weather-info {
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+}
+
+.weather-info.show {
+    opacity: 1;
+}
+
+
+
+/* Styles for alert messages */
+.alert {
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 5px;
+    color: #fff;
+    font-weight: bold;
+}
+
+.alert.success {
+    background-color: #4CAF50; /* Green */
+}
+
+.alert.error {
+    background-color: #f44336; /* Red */
+}
+
+.alert.warning {
+    background-color: #ff9800; /* Orange */
+}
+
+/* Daily Summary Styles */
+.daily-summary {
+    text-align: left;
+    margin-top: 20px;
+    background-color: #f9f9f9; /* Light background for contrast */
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    z-index: 2; /* Ensure it's above the animation */
+}
+
+.daily-summary h2 {
+    color: #4a56e2;
+}
+
+.daily-summary button {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    background-color: #4a56e2; /* Button color */
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    margin-bottom: 10px;
+}
+
+.daily-summary button:hover {
+    background-color: #3c47e9; /* Darker shade on hover */
+}
+
+.daily-summary p {
+    margin: 5px 0;
+    font-size: 14px;
+    color: #333;
+}
+.alert-card {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #ff9800; /* Orange */
+    color: white;
+    padding: 15px 20px;
+    border-radius: 5px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    z-index: 10; /* Ensure it's above other content */
+    transition: opacity 0.3s ease-in-out;
+}
+.previous-data-btn {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    background-color: #4a56e2; /* Button color */
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 20px;
+}
+
+.previous-data-card {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80%;
+    max-width: 500px;
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    z-index: 10;
+    text-align: center;
+}
+
+.previous-data-card h2 {
+    color: #4a56e2;
+}
+
+.previous-data-card button {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    background-color: #f44336; /* Close button color */
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 15px;
+}

@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.7.6/lottie.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Include Chart.js -->
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">Weather Dashboard</h1>
+        
+        <!-- Alert Container -->
+        <div id="alert-container"></div>
+
+        <div class="controls">
+            <label for="city">Select a City:</label>
+            <select id="city">
+                {% for city in weather %}
+                    <option value="{{ city }}">{{ city }}</option>
+                {% endfor %}
+            </select>            
+            <label for="format">Temperature Format:</label>
+            <select id="format">
+                <option value="Celsius">Celsius</option>
+                <option value="Fahrenheit">Fahrenheit</option>
+                <option value="Kelvin">Kelvin</option>
+            </select>
+        </div>
+
+        <div class="weather-info">
+            <div id="weather-animation" class="weather-animation"></div> 
+            <p id="city-name">City: --</p>
+            <p id="temperature">Temperature: --</p>
+            <p id="feels-like">Feels Like: --</p>
+            <p id="condition">Condition: --</p>
+            <p id="last-updated">Last Updated: --</p>
+        </div>
+          
+        <div class="daily-summary">
+            <h2>Daily Weather Summary</h2>
+            <div id="summary-content"></div>
+        </div>
+
+        
+        <button id="visualize-data-btn" class="previous-data-btn">Visualize Weather Data</button>
+        <div id="visualization-card" class="previous-data-card" style="display: none;">
+            <button id="close-visualization-btn" onclick="hideVisualizationCard()">Close</button>
+            <h2>Weather Data Visualization</h2>
+            <canvas id="weatherChart" width="400" height="200"></canvas>
+        </div> 
+    </div>
+
+    <div id="alert-card" class="alert-card" style="display: none;">
+        <span id="alert-message"></span>
+    </div>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+
+    <script>
+        // Function to show alert messages
+        function showAlert(message, type) {
+            const alertContainer = document.getElementById('alert-container');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert ${type}`; // Add class based on type (success/error)
+            alertDiv.innerText = message;
+            alertContainer.appendChild(alertDiv);
+    
+            // Automatically remove the alert after 6 seconds
+            setTimeout(() => {
+                alertContainer.removeChild(alertDiv);
+            }, 6000);
+        }
+    
+        // Example alert message from Flask
+        const alertMessage = "{{ alert_message|default('') }}"; // Get message from Flask
+        if (alertMessage) {
+            showAlert(alertMessage, "success"); // "success" can be changed to "error" based on the situation
+        }
+    
+        // Fetch Daily Summary for the selected city
+        document.getElementById('city').addEventListener('change', function() {
+            loadSummary(); // Load summary when the city is changed
+        });
+    
+        function loadSummary() {
+            const citySelect = document.getElementById('city');
+            const selectedCity = citySelect.value;
+            const formatSelect = document.getElementById('format');
+            const selectedFormat = formatSelect.value;
+    
+            // Clear previous alerts
+            const alertContainer = document.getElementById('alert-container');
+            alertContainer.innerHTML = '';
+    
+            fetch(`/api/summary?city=${selectedCity}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const summaryContent = document.getElementById('summary-content');
+                    summaryContent.innerHTML = ''; // Clear previous content
+    
+                    if (data.length > 0) {
+                        const summary = data[0];
+                        let avgTemp, minTemp, maxTemp;
+    
+                        // Convert temperatures based on the selected format
+                        if (selectedFormat === 'Celsius') {
+                            avgTemp = (summary.avg_temp - 273.15).toFixed(2) + '°C';
+                            minTemp = (summary.min_temp - 273.15).toFixed(2) + '°C';
+                            maxTemp = (summary.max_temp - 273.15).toFixed(2) + '°C';
+                        } else if (selectedFormat === 'Fahrenheit') {
+                            avgTemp = ((summary.avg_temp - 273.15) * 9 / 5 + 32).toFixed(2) + '°F';
+                            minTemp = ((summary.min_temp - 273.15) * 9 / 5 + 32).toFixed(2) + '°F';
+                            maxTemp = ((summary.max_temp - 273.15) * 9 / 5 + 32).toFixed(2) + '°F';
+                        } else {
+                            avgTemp = summary.avg_temp + ' K';
+                            minTemp = summary.min_temp + ' K';
+                            maxTemp = summary.max_temp + ' K';
+                        }
+    
+                        summaryContent.innerHTML = `
+                            <h3>${summary.city}</h3>
+                            <p>Average Temperature: ${avgTemp}</p>
+                            <p>Minimum Temperature: ${minTemp}</p>
+                            <p>Maximum Temperature: ${maxTemp}</p>
+                            <p>Condition: ${summary.condition}</p>
+                        `;
+                    } else {
+                        showAlert("No summary data found for this city.", "error");
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching summary:', error);
+                    showAlert('Failed to fetch daily summary', 'error');
+                });
+        }
+    
+        // Function to visualize the weather data
+        document.getElementById('visualize-data-btn').addEventListener('click', function() {
+            const citySelect = document.getElementById('city');
+            const selectedCity = citySelect.value;
+    
+            fetch(`/api/summary?city=${selectedCity}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.length > 0) {
+                        const summary = data[0]; // Get the summary data for the selected city
+                        const avgTemp = (summary.avg_temp - 273.15).toFixed(2); // Convert to Celsius
+                        const minTemp = (summary.min_temp - 273.15).toFixed(2);
+                        const maxTemp = (summary.max_temp - 273.15).toFixed(2);
+    
+                        // Show the visualization card
+                        showVisualizationCard(summary.city, avgTemp, minTemp, maxTemp, summary.condition);
+                    } else {
+                        showAlert("No data available for visualization.", "error");
+                    }
+                })
+                .catch(error => {
+                    showAlert('Error fetching data for visualization', 'error');
+                });
+        });
+    
+        // Function to show the visualization card
+        function showVisualizationCard(city, avgTemp, minTemp, maxTemp, condition) {
+            const visualizationCard = document.getElementById('visualization-card');
+            visualizationCard.style.display = 'block';
+            
+            // Clear previous SVG
+            d3.select("#visualization-svg").remove(); // Ensure to remove any existing SVG
+            
+            // Create a new SVG for the current visualization
+            const svg = d3.select("#visualization-card")
+                          .append("svg")
+                          .attr("id", "visualization-svg") // Set an ID to target later for removal
+                          .attr("width", 400)
+                          .attr("height", 250); // Adjust height for labels
+        
+            // Scale for the bars
+            const x = d3.scaleBand()
+                        .domain(["Average", "Minimum", "Maximum"])
+                        .range([0, 300])
+                        .padding(0.1);
+        
+            const y = d3.scaleLinear()
+                        .domain([0, Math.max(avgTemp, minTemp, maxTemp) + 5])
+                        .range([200, 0]);
+            
+            // Add bars
+            svg.selectAll(".bar")
+                .data([avgTemp, minTemp, maxTemp])
+                .enter().append("rect")
+                .attr("class", "bar")
+                .attr("x", (d, i) => x(["Average", "Minimum", "Maximum"][i]))
+                .attr("y", d => y(d))
+                .attr("width", x.bandwidth())
+                .attr("height", d => 200 - y(d))
+                .attr("fill", (d, i) => (i === 0 ? "steelblue" : (i === 1 ? "orange" : "red")));
+        
+            // Add labels for bars
+            svg.selectAll(".label")
+                .data([avgTemp, minTemp, maxTemp])
+                .enter().append("text")
+                .attr("class", "label")
+                .attr("x", (d, i) => x(["Average", "Minimum", "Maximum"][i]) + x.bandwidth() / 2)
+                .attr("y", d => y(d) - 5)
+                .attr("text-anchor", "middle")
+                .text(d => d + "°C");
+        
+            // Add legend
+            const legend = svg.append("g")
+                .attr("transform", "translate(0, 220)"); // Position the legend below the bars
+            
+            const colors = ["steelblue", "orange", "red"];
+            const labels = ["Average", "Minimum", "Maximum"];
+        
+            colors.forEach((color, i) => {
+                legend.append("rect")
+                    .attr("x", i * 90)
+                    .attr("y", 0)
+                    .attr("width", 20)
+                    .attr("height", 20)
+                    .attr("fill", color);
+                
+                legend.append("text")
+                    .attr("x", i * 90 + 30)
+                    .attr("y", 15)
+                    .text(labels[i]);
+            });
+        }
+        
+        document.getElementById('close-visualization-btn').addEventListener('click', hideVisualizationCard);
+
+function hideVisualizationCard() {
+    const visualizationCard = document.getElementById('visualization-card');
+    visualizationCard.style.display = 'none';
+    
+    // Clear previous SVG
+    d3.select("#visualization-svg").remove(); // Remove the SVG when closing the card
+}
+
+    
+        // Load summary when the page loads
+        window.onload = loadSummary;
+    </script>
+       
+    
+</body>
+</html>
